@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="ScreenOff/ScreenOff.vcxproj" Id="8f3bbf66-779b-400a-80ac-b0aa286c636d" />
+</Solution>

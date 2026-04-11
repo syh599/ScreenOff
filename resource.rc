@@ -1,0 +1,7 @@
+#define APP_ICON 101
+#define ACTIVE_ICON 102
+
+APP_ICON ICON "icon.ico"
+ACTIVE_ICON ICON "active.ico"
+
+
