@@ -1,5 +1,5 @@
 # <img width="32" height="32" alt="appicon" src="https://github.com/user-attachments/assets/e2f67aa5-9f24-45f9-8626-609fa0cda5ce" /> ScreenOff  <img width="32" height="32" alt="activeicon" src="https://github.com/user-attachments/assets/85500ec8-71e1-428a-919c-be7e0f623022" />
-A lightweight Windows tray application that turns off the display while keeping media playing. Designed for systems with Modern Standby (S0 sleep) where turning off the display normally pauses video/audio.
+A lightweight Windows tray application that turns off the display while keeping media playing. Designed for laptops with Modern Standby (S0 sleep) where turning off the display normally pauses video/audio.
 
 
 
