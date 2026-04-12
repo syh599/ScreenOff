@@ -127,10 +127,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\isAdmin.cpp" />
     <ClCompile Include="..\main.cpp" />
+    <ClCompile Include="..\timeout.cpp" />
+    <ClCompile Include="..\wakelock.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\resource.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\active.ico" />
+    <Image Include="..\icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\isAdmin.h" />
+    <ClInclude Include="..\resource.h" />
+    <ClInclude Include="..\wakelock.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

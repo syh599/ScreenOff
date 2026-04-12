@@ -1,8 +1,8 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <shellapi.h>
 #include <powrprof.h>
 #include <iostream>
-#include <shellapi.h>
 
 #include <vector>
 #include <array>
@@ -10,161 +10,28 @@
 #include <regex>
 #include <cstdio>
 
+#include "isAdmin.h"
+#include "timeout.h"
+#include "wakelock.h"
+
 #pragma comment(lib, "powrprof.lib")
 
 #define APP_ICON 101
 #define ACTIVE_ICON 102
 
-static const GUID GUID_DISPLAY_SUBGROUP = 
-    { 0x7516b95f, 0xf776, 0x4464, 0x8c, 0x53, 0x06, 0x16, 0x7f, 0x40, 0xcc, 0x99 };
-
-static const GUID GUID_DISPLAY_TIMEOUT = 
-    { 0x3c0bc021, 0xc8a8, 0x4e07, 0xa9, 0x73, 0x6b, 0x14, 0xcb, 0xcb, 0x2b, 0x7e };
-
 NOTIFYICONDATAA nid = {};
+
 GUID* pActiveScheme = NULL;
 DWORD originalTimeout = 0;
 bool hasSavedTimeout = false;
+
 int isActive = 0;
 HPOWERNOTIFY hPowerNotify = NULL; 
+
 UINT uTaskbarRestart = 0;
 
 std::vector<std::string> activeOverrides;
 
-bool SaveOriginalTimeout()
-{
-    // active power plan
-    if (PowerGetActiveScheme(NULL, &pActiveScheme) != ERROR_SUCCESS)
-        return 0;  // Failed
-    
-    // read current display timeout value
-    if (PowerReadACValueIndex(NULL, pActiveScheme, &GUID_DISPLAY_SUBGROUP, 
-                              &GUID_DISPLAY_TIMEOUT, &originalTimeout) != ERROR_SUCCESS)
-        return 0;
-
-    hasSavedTimeout = true;
-    return 1;
-}
-
-bool SetNewTimeout()
-{
-    DWORD newTimeout = 1; // in seconds
-    
-    if (PowerWriteACValueIndex(NULL, pActiveScheme, &GUID_DISPLAY_SUBGROUP,
-                               &GUID_DISPLAY_TIMEOUT, newTimeout) != ERROR_SUCCESS)
-        return 0;
-
-    PowerSetActiveScheme(NULL, pActiveScheme);
-
-    
-    return 1;
-}
-
-bool RestoreOriginalTimeout()
-{  
-    if (!hasSavedTimeout) return 0;
-
-    if (PowerWriteACValueIndex(NULL, pActiveScheme, &GUID_DISPLAY_SUBGROUP,
-                               &GUID_DISPLAY_TIMEOUT, originalTimeout) != ERROR_SUCCESS)
-        return 0;
-    
-    PowerSetActiveScheme(NULL, pActiveScheme);
-
-    return 1;
-}
-
-bool IsRunningAsAdmin()
-{
-    BOOL isAdmin = FALSE;
-    PSID adminGroup = NULL;
-
-    SID_IDENTIFIER_AUTHORITY ntAuthority = SECURITY_NT_AUTHORITY;
-    AllocateAndInitializeSid(&ntAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID,
-        DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &adminGroup);
-
-    CheckTokenMembership(NULL, adminGroup, &isAdmin);
-    FreeSid(adminGroup);
-
-    return isAdmin == TRUE;
-}
-
-void RelaunchAsAdmin() {
-    char path[MAX_PATH];
-    GetModuleFileNameA(NULL, path, MAX_PATH);
-
-    ShellExecuteA(NULL, "runas", path, NULL, NULL, SW_SHOW);
-}
-
-std::string GetWakeLockProcesses()
-{
-    std::array<char, 128> buffer;
-    std::string result;
-
-    //run powercfg /requests and capture output
-    FILE* pipe = _popen("powercfg /requests 2>nul", "r");
-    if (!pipe) return "";
-
-    while (fgets(buffer.data(), 128, pipe) != NULL) {
-        result += buffer.data();
-    }
-    _pclose(pipe);
-
-    return result;
-}
-
-std::vector<std::string> FindProcessesWithWakeLock(const std::string& output)
-{
-    std::vector<std::string> processes;
-    std::regex processRegex(R"(\[PROCESS\].*\\([^\\]+\.exe))");
-
-    auto begin = std::sregex_iterator(output.begin(), output.end(), processRegex);
-    auto end = std::sregex_iterator();
-
-    for (auto it = begin; it != end; ++it) {
-        std::string proc = (*it)[1].str();
-        // lowercase for comparison
-        for (char& c : proc) c = tolower(c);
-        if (std::find(processes.begin(), processes.end(), proc) == processes.end()) {
-            processes.push_back(proc);
-        }
-    }
-
-    return processes;
-}
-
-void RunPowerCfg(const char* args)
-{
-    ShellExecuteA(NULL, "runas", "C:\\Windows\\System32\\powercfg.exe", args, NULL, SW_HIDE);
-}
-
-bool OverrideWakeLocks()
-{   
-    bool isAdmin = IsRunningAsAdmin();
-    if (!isAdmin) return 0;
-
-    std::string output = GetWakeLockProcesses();
-    auto processes = FindProcessesWithWakeLock(output);
-
-    for (const auto& proc : processes) {
-        std::string cmd = "/requestsoverride PROCESS \"" + proc + "\" DISPLAY";
-        RunPowerCfg(cmd.c_str());
-        activeOverrides.push_back(proc);
-    }
-    return 1;
-}
-
-bool RevertOverrides()
-{   
-    bool isAdmin = IsRunningAsAdmin();
-    if (!isAdmin) return 0;
-
-    for (const auto& proc : activeOverrides) {
-        std::string cmd = "/requestsoverride PROCESS \"" + proc + "\"";
-        RunPowerCfg(cmd.c_str());
-    }
-    activeOverrides.clear();
-    return 1;
-}
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -190,7 +57,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         if (hPowerNotify) {
             UnregisterPowerSettingNotification(hPowerNotify);
         }
-        if (isActive) RestoreOriginalTimeout();
+        if (isActive) RestoreOriginalTimeout(pActiveScheme, originalTimeout, hasSavedTimeout);
         Shell_NotifyIconA(NIM_DELETE, &nid);
         PostQuitMessage(0);
     }
@@ -198,9 +65,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     if (msg == WM_USER + 1){ // tray icon clicks
         if (lParam== WM_LBUTTONDBLCLK){  // Left double-click
             if (!isActive) {
-                if (SaveOriginalTimeout() && SetNewTimeout()) {
+                if (SaveOriginalTimeout(&pActiveScheme, &originalTimeout, &hasSavedTimeout) 
+                    && 
+                    SetNewTimeout(pActiveScheme)) 
+                {
                     isActive = 1;
-                    OverrideWakeLocks();
+                    OverrideWakeLocks(activeOverrides);
 
                     // Refresh icon
                     nid.hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(ACTIVE_ICON));
@@ -253,9 +123,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             DWORD monitorState = *(DWORD*)pbs->Data;
             if (monitorState == 1 && isActive)  // Monitor turned ON
             {
-                RestoreOriginalTimeout();
+                RestoreOriginalTimeout(pActiveScheme, originalTimeout, hasSavedTimeout);
                 isActive = 0;
-                RevertOverrides();
+                RevertOverrides(activeOverrides);
                 nid.hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(APP_ICON));
                 Shell_NotifyIconA(NIM_MODIFY, &nid);
             }

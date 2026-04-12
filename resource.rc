@@ -1,7 +1,36 @@
+#include <windows.h>
+
 #define APP_ICON 101
 #define ACTIVE_ICON 102
 
 APP_ICON ICON "icon.ico"
 ACTIVE_ICON ICON "active.ico"
 
-
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION 1, 0, 0, 0
+PRODUCTVERSION 1, 0, 0, 0
+FILEFLAGSMASK 0x3fL
+FILEFLAGS 0x0L
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+FILESUBTYPE VFT2_UNKNOWN
+BEGIN
+BLOCK "StringFileInfo"
+BEGIN
+BLOCK "040904B0"
+BEGIN
+VALUE "CompanyName", ""
+VALUE "FileDescription", "Turns off display in S0 systems"
+VALUE "FileVersion", "1.0.0.0"
+VALUE "InternalName", "ScreenOff"
+VALUE "LegalCopyright", "Copyright (C) 2026"
+VALUE "OriginalFilename", "ScreenOff.exe"
+VALUE "ProductName", "ScreenOff"
+VALUE "ProductVersion", "1.0.0.0"
+END
+END
+BLOCK "VarFileInfo"
+BEGIN
+VALUE "Translation", 0x409, 1200
+END
+END
