@@ -131,6 +131,7 @@
     <ClCompile Include="..\isAdmin.cpp" />
     <ClCompile Include="..\main.cpp" />
     <ClCompile Include="..\silentcmd.cpp" />
+    <ClCompile Include="..\sleeptimer.cpp" />
     <ClCompile Include="..\timeout.cpp" />
     <ClCompile Include="..\wakelock.cpp" />
   </ItemGroup>
@@ -146,6 +147,7 @@
     <ClInclude Include="..\isAdmin.h" />
     <ClInclude Include="..\resource.h" />
     <ClInclude Include="..\silentcmd.h" />
+    <ClInclude Include="..\sleeptimer.h" />
     <ClInclude Include="..\timeout.h" />
     <ClInclude Include="..\wakelock.h" />
   </ItemGroup>

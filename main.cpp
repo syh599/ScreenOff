@@ -17,6 +17,7 @@
 #include "wakelock.h"
 #include "autostart.h"
 #include "silentcmd.h"
+#include "sleeptimer.h"
 
 #pragma comment(lib, "powrprof.lib")
 
@@ -27,13 +28,31 @@ DWORD originalTimeoutAC = 0;
 DWORD originalTimeoutDC = 0;
 bool hasSavedTimeout = false;
 
-int isActive = 0;
-HPOWERNOTIFY hPowerNotify = NULL; 
+bool isActive = 0;
+HPOWERNOTIFY hPowerNotify = NULL;
+
+bool sleepTimerActive = false;
+int sleepAfterMinutes = 0;
+time_t sleepTargetTime = 0;
 
 UINT uTaskbarRestart = 0;
 
 std::vector<std::string> activeOverrides;
 
+void PressMediaPlayPause() {
+    INPUT inputs[2] = { 0 };
+
+    // Key down event
+    inputs[0].type = INPUT_KEYBOARD;
+    inputs[0].ki.wVk = VK_MEDIA_PLAY_PAUSE;
+
+    // Key up event
+    inputs[1].type = INPUT_KEYBOARD;
+    inputs[1].ki.wVk = VK_MEDIA_PLAY_PAUSE;
+    inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
+
+    SendInput(2, inputs, sizeof(INPUT));
+}
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -59,6 +78,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         if (hPowerNotify) {
             UnregisterPowerSettingNotification(hPowerNotify);
         }
+        if (sleepTimerActive) KillTimer(hwnd, 1);
         if (isActive) RestoreOriginalTimeout(pActiveScheme, originalTimeoutAC, originalTimeoutDC, hasSavedTimeout);
         Shell_NotifyIconA(NIM_DELETE, &nid);
         PostQuitMessage(0);
@@ -73,6 +93,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 {
                     isActive = 1;
                     OverrideWakeLocks(activeOverrides);
+                    StartSleepTimer(sleepAfterMinutes, sleepTimerActive, sleepTargetTime, hwnd);
 
                     // Refresh icon
                     nid.hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(ACTIVE_ICON));
@@ -85,6 +106,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 RestoreOriginalTimeout(pActiveScheme, originalTimeoutAC, originalTimeoutDC, hasSavedTimeout);
                 isActive = 0;
                 RevertOverrides(activeOverrides);
+
+                sleepTimerActive = false;
+                sleepAfterMinutes = 0;
+                KillTimer(hwnd, 1);
                 nid.hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(APP_ICON));
                 Shell_NotifyIconA(NIM_MODIFY, &nid);
                 //MessageBoxA(hwnd, "Original display settings restored.", "Monitor Woke", MB_OK);
@@ -92,7 +117,24 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         }
         else if (lParam == WM_RBUTTONUP){  // Right-click
             HMENU hMenu = CreatePopupMenu();
-            AppendMenuA(hMenu, MF_STRING | (IsInStartup() ? MF_CHECKED : MF_UNCHECKED), 1, "Run on startup");
+            HMENU hSleepMenu = CreatePopupMenu();
+
+            bool isCustomTime = ((sleepAfterMinutes > 60) || (sleepAfterMinutes <= 60 && sleepAfterMinutes % 15 != 0));
+            std::string customText = "Custom: " +
+                (isCustomTime ? std::to_string(sleepAfterMinutes) + " mins" : "");
+
+            AppendMenuA(hSleepMenu, MF_STRING | (sleepAfterMinutes == 15 ? MF_CHECKED : MF_UNCHECKED), 10, "15 minutes");
+            AppendMenuA(hSleepMenu, MF_STRING | (sleepAfterMinutes == 30 ? MF_CHECKED : MF_UNCHECKED), 11, "30 minutes");
+            AppendMenuA(hSleepMenu, MF_STRING | (sleepAfterMinutes == 45 ? MF_CHECKED : MF_UNCHECKED), 12, "45 minutes");
+            AppendMenuA(hSleepMenu, MF_STRING | (sleepAfterMinutes == 60 ? MF_CHECKED : MF_UNCHECKED), 13, "60 minutes");
+            AppendMenuA(hSleepMenu, MF_STRING | ( isCustomTime ? MF_CHECKED : MF_UNCHECKED), 14, customText.c_str());
+            AppendMenuA(hSleepMenu, MF_SEPARATOR, 0, NULL);
+            AppendMenuA(hSleepMenu, MF_STRING, 15, "Cancel");
+            
+            AppendMenuA(hMenu, MF_STRING, 98, "Test PAUSE command");
+            AppendMenuA(hMenu, MF_POPUP | (sleepAfterMinutes > 0 ? MF_CHECKED : MF_UNCHECKED), (UINT_PTR)hSleepMenu, "Sleep Timer");
+            AppendMenuA(hMenu, MF_STRING | (IsInStartup() ? MF_CHECKED : MF_UNCHECKED), 2, "Run on startup");
+            AppendMenuA(hMenu, MF_SEPARATOR, 0, NULL);
             AppendMenuA(hMenu, MF_STRING, 99, "Exit");
             
             // Show the menu at mouse position
@@ -112,10 +154,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         if (command == 99) {
             DestroyWindow(hwnd);
         }
-        else if (command == 1) {
+        else if (command == 2) {
             if (IsInStartup()) RemoveFromStartup();
             else AddToStartup();
         }
+        else if (command == 10) sleepAfterMinutes = 15;
+        else if (command == 11) sleepAfterMinutes = 30;
+        else if (command == 12) sleepAfterMinutes = 45;
+        else if (command == 13) sleepAfterMinutes = 60;
+        else if (command == 14) sleepAfterMinutes = GetCustomTime();
+        else if (command == 15) sleepAfterMinutes = 0;
+        else if (command == 98) PressMediaPlayPause(); //SetSuspendState(FALSE, FALSE, FALSE);
+            
         return 0;
     }
 
@@ -148,6 +198,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         return 0;
     }
 
+    if (msg == WM_TIMER && wParam == 1)
+    {
+        if (sleepTimerActive && time(NULL) >= sleepTargetTime)
+        {
+            sleepTimerActive = false;
+            sleepAfterMinutes = 0; //option to skip???? TODO!!!!!!
+            KillTimer(hwnd, 1);
+            PressMediaPlayPause();
+            //SetSuspendState(FALSE, TRUE, FALSE);
+        }
+        return 0;
+    }
+
     return DefWindowProcA(hwnd, msg, wParam, lParam);
 }
 
@@ -171,10 +234,10 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
         Sleep(500);
     }
 
-    // Register a "window type
+    // Register a window type
     WNDCLASSA wc = {};
-    wc.lpfnWndProc = WndProc;      // "Use my function above"
-    wc.hInstance = hInstance;          // "This program"
+    wc.lpfnWndProc = WndProc;      // Use function above
+    wc.hInstance = hInstance;
     wc.lpszClassName = "ScreenOffWindow";  // Name of this window type
     RegisterClassA(&wc);
     

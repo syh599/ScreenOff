@@ -13,7 +13,7 @@ void AddToStartup()
 
     char cmd[1024];
     sprintf_s(cmd,
-        "schtasks /create /tn \"ScreenOff\" /tr \"\\\"%s\\\"\" /sc ONLOGON /f /rl HIGHEST",
+        "schtasks /create /tn \"ScreenOff\" /tr \"\\\"%s\\\"\" /sc ONLOGON /delay 0000:01 /f /rl HIGHEST",
         exePath);
 
     ShellExecuteA(NULL, "runas", "cmd.exe",
