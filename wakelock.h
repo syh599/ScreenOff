@@ -2,10 +2,7 @@
 #include <windows.h>
 
 #include <vector>
-#include <array>
 #include <string>
-#include <regex>
-#include <cstdio>
 
 void RunPowerCfg(const char* args);
 std::string GetWakeLockProcesses();

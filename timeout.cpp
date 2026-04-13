@@ -3,15 +3,15 @@
 #include <powrprof.h>
 
 
-bool SaveOriginalTimeout(GUID** ppActiveScheme, DWORD* originalTimeout, bool* pHasSavedTimeout)
+bool SaveOriginalTimeout(GUID** ppActiveScheme, DWORD* originalTimeoutAC, DWORD* originalTimeoutDC, bool* pHasSavedTimeout)
 {
     // active power plan
     if (PowerGetActiveScheme(NULL, ppActiveScheme) != ERROR_SUCCESS)
         return 0;  // Failed
 
     // read current display timeout value
-    if (PowerReadACValueIndex(NULL, *ppActiveScheme, &GUID_DISPLAY_SUBGROUP,
-        &GUID_DISPLAY_TIMEOUT, originalTimeout) != ERROR_SUCCESS)
+    if ((PowerReadACValueIndex(NULL, *ppActiveScheme, &GUID_DISPLAY_SUBGROUP, &GUID_DISPLAY_TIMEOUT, originalTimeoutAC) != ERROR_SUCCESS) ||
+        (PowerReadDCValueIndex(NULL, *ppActiveScheme, &GUID_DISPLAY_SUBGROUP, &GUID_DISPLAY_TIMEOUT, originalTimeoutDC) != ERROR_SUCCESS))
         return 0;
 
     *pHasSavedTimeout = true;
@@ -22,8 +22,8 @@ bool SetNewTimeout(GUID* pActiveScheme)
 {
     DWORD newTimeout = 1; // in seconds
 
-    if (PowerWriteACValueIndex(NULL, pActiveScheme, &GUID_DISPLAY_SUBGROUP,
-        &GUID_DISPLAY_TIMEOUT, newTimeout) != ERROR_SUCCESS)
+    if ((PowerWriteACValueIndex(NULL, pActiveScheme, &GUID_DISPLAY_SUBGROUP, &GUID_DISPLAY_TIMEOUT, newTimeout) != ERROR_SUCCESS) ||
+        (PowerWriteDCValueIndex(NULL, pActiveScheme, &GUID_DISPLAY_SUBGROUP, &GUID_DISPLAY_TIMEOUT, newTimeout) != ERROR_SUCCESS))
         return 0;
 
     PowerSetActiveScheme(NULL, pActiveScheme);
@@ -32,12 +32,12 @@ bool SetNewTimeout(GUID* pActiveScheme)
     return 1;
 }
 
-bool RestoreOriginalTimeout(GUID* pActiveScheme, DWORD originalTimeout, bool hasSavedTimeout)
+bool RestoreOriginalTimeout(GUID* pActiveScheme, DWORD originalTimeoutAC, DWORD originalTimeoutDC, bool hasSavedTimeout)
 {
     if (!hasSavedTimeout) return 0;
 
-    if (PowerWriteACValueIndex(NULL, pActiveScheme, &GUID_DISPLAY_SUBGROUP,
-        &GUID_DISPLAY_TIMEOUT, originalTimeout) != ERROR_SUCCESS)
+    if ((PowerWriteACValueIndex(NULL, pActiveScheme, &GUID_DISPLAY_SUBGROUP, &GUID_DISPLAY_TIMEOUT, originalTimeoutAC) != ERROR_SUCCESS) ||
+        (PowerWriteDCValueIndex(NULL, pActiveScheme, &GUID_DISPLAY_SUBGROUP, &GUID_DISPLAY_TIMEOUT, originalTimeoutDC) != ERROR_SUCCESS))
         return 0;
 
     PowerSetActiveScheme(NULL, pActiveScheme);

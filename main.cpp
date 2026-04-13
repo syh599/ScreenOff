@@ -13,6 +13,8 @@
 #include "isAdmin.h"
 #include "timeout.h"
 #include "wakelock.h"
+#include "autostart.h"
+#include "silentcmd.h"
 
 #pragma comment(lib, "powrprof.lib")
 
@@ -22,7 +24,8 @@
 NOTIFYICONDATAA nid = {};
 
 GUID* pActiveScheme = NULL;
-DWORD originalTimeout = 0;
+DWORD originalTimeoutAC = 0;
+DWORD originalTimeoutDC = 0;
 bool hasSavedTimeout = false;
 
 int isActive = 0;
@@ -57,7 +60,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         if (hPowerNotify) {
             UnregisterPowerSettingNotification(hPowerNotify);
         }
-        if (isActive) RestoreOriginalTimeout(pActiveScheme, originalTimeout, hasSavedTimeout);
+        if (isActive) RestoreOriginalTimeout(pActiveScheme, originalTimeoutAC, originalTimeoutDC, hasSavedTimeout);
         Shell_NotifyIconA(NIM_DELETE, &nid);
         PostQuitMessage(0);
     }
@@ -65,7 +68,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     if (msg == WM_USER + 1){ // tray icon clicks
         if (lParam== WM_LBUTTONDBLCLK){  // Left double-click
             if (!isActive) {
-                if (SaveOriginalTimeout(&pActiveScheme, &originalTimeout, &hasSavedTimeout) 
+                if (SaveOriginalTimeout(&pActiveScheme, &originalTimeoutAC, &originalTimeoutDC, &hasSavedTimeout) 
                     && 
                     SetNewTimeout(pActiveScheme)) 
                 {
@@ -79,15 +82,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 } else {
                     MessageBoxA(hwnd, "Failed to activate.", "Error", MB_OK);
                 }
-            } /*else {
-                RestoreOriginalTimeout();
+            } else {
+                RestoreOriginalTimeout(pActiveScheme, originalTimeoutAC, originalTimeoutDC, hasSavedTimeout);
                 isActive = 0;
-                MessageBoxA(hwnd, "Original display settings restored.", "Monitor Woke", MB_OK);
-            } */
+                RevertOverrides(activeOverrides);
+                nid.hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(APP_ICON));
+                Shell_NotifyIconA(NIM_MODIFY, &nid);
+                //MessageBoxA(hwnd, "Original display settings restored.", "Monitor Woke", MB_OK);
+            } 
         }
         else if (lParam == WM_RBUTTONUP){  // Right-click
             HMENU hMenu = CreatePopupMenu();
-            AppendMenuA(hMenu, MF_STRING, 1, "Exit");
+            AppendMenuA(hMenu, MF_STRING | (IsInStartup() ? MF_CHECKED : MF_UNCHECKED), 1, "Run on startup");
+            AppendMenuA(hMenu, MF_STRING, 99, "Exit");
             
             // Show the menu at mouse position
             POINT pt;
@@ -103,8 +110,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
     if (msg == WM_COMMAND){
         int command = LOWORD(wParam);
-        if (command == 1) {
+        if (command == 99) {
             DestroyWindow(hwnd);
+        }
+        else if (command == 1) {
+            if (IsInStartup()) RemoveFromStartup();
+            else AddToStartup();
         }
         return 0;
     }
@@ -123,7 +134,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             DWORD monitorState = *(DWORD*)pbs->Data;
             if (monitorState == 1 && isActive)  // Monitor turned ON
             {
-                RestoreOriginalTimeout(pActiveScheme, originalTimeout, hasSavedTimeout);
+                RestoreOriginalTimeout(pActiveScheme, originalTimeoutAC, originalTimeoutDC, hasSavedTimeout);
                 isActive = 0;
                 RevertOverrides(activeOverrides);
                 nid.hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(APP_ICON));

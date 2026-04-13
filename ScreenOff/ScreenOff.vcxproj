@@ -127,8 +127,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\autostart.cpp" />
     <ClCompile Include="..\isAdmin.cpp" />
     <ClCompile Include="..\main.cpp" />
+    <ClCompile Include="..\silentcmd.cpp" />
     <ClCompile Include="..\timeout.cpp" />
     <ClCompile Include="..\wakelock.cpp" />
   </ItemGroup>
@@ -140,8 +142,11 @@
     <Image Include="..\icon.ico" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\autostart.h" />
     <ClInclude Include="..\isAdmin.h" />
     <ClInclude Include="..\resource.h" />
+    <ClInclude Include="..\silentcmd.h" />
+    <ClInclude Include="..\timeout.h" />
     <ClInclude Include="..\wakelock.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

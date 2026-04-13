@@ -1,6 +1,9 @@
 #include "wakelock.h"
 #include "isAdmin.h"
 
+#include <array>
+#include <regex>
+#include <cstdio>
 
 void RunPowerCfg(const char* args)
 {
