@@ -153,28 +153,35 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nShowCmd)
 {
+    //admin check
     if (!IsRunningAsAdmin()) {
-        int result = MessageBoxA(NULL, "ScreenOff needs to run as Admin to work during video playback.\nWould you like to relaunch as Administrator?", "Warning", MB_YESNOCANCEL | MB_ICONWARNING);
-        if (result == IDYES) {
+        /*int result = MessageBoxA(NULL, "ScreenOff needs to run as Admin to work during video playback.\nWould you like to relaunch as Administrator?", "Warning", MB_OKCANCEL | MB_ICONWARNING);
+        if (result == IDOK) {
             RelaunchAsAdmin();
-            return 0;
-        }
-        else if (result == IDCANCEL) {
-            return 0;
-        }
-        //else if (result == IDNO) {}
+        }*/
+        RelaunchAsAdmin();
+        return 0;
     }
-    // Step 1: Register a "window type"
+
+    //single instance
+    HWND hExisting = FindWindowA("ScreenOffWindow", NULL);
+
+    if (hExisting) { //close existing instance
+        PostMessage(hExisting, WM_CLOSE, 0, 0);
+        Sleep(500);
+    }
+
+    // Register a "window type
     WNDCLASSA wc = {};
     wc.lpfnWndProc = WndProc;      // "Use my function above"
     wc.hInstance = hInstance;          // "This program"
-    wc.lpszClassName = "MyClass";  // "Name of this window type"
+    wc.lpszClassName = "ScreenOffWindow";  // Name of this window type
     RegisterClassA(&wc);
     
-    // Step 2: Create the actual window (hidden)
-    CreateWindowExA(0, "MyClass", "", 0, 0,0,0,0, NULL, NULL, hInstance, NULL);
+    // Create hidden window
+    CreateWindowExA(0, "ScreenOffWindow", "", 0, 0,0,0,0, NULL, NULL, hInstance, NULL);
     
-    // Step 3: Message loop (waits for messages)
+    // Message loop
     MSG msg;
     while (GetMessage(&msg, NULL, 0, 0))
     {
