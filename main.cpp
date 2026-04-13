@@ -186,6 +186,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 RestoreOriginalTimeout(pActiveScheme, originalTimeoutAC, originalTimeoutDC, hasSavedTimeout);
                 isActive = 0;
                 RevertOverrides(activeOverrides);
+
+                sleepTimerActive = false;
+                sleepAfterMinutes = 0;
+                KillTimer(hwnd, 1);
+
                 nid.hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(APP_ICON));
                 Shell_NotifyIconA(NIM_MODIFY, &nid);
             }
