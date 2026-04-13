@@ -10,6 +10,8 @@
 #include <regex>
 #include <cstdio>
 
+#include "resource.h"
+
 #include "isAdmin.h"
 #include "timeout.h"
 #include "wakelock.h"
@@ -17,9 +19,6 @@
 #include "silentcmd.h"
 
 #pragma comment(lib, "powrprof.lib")
-
-#define APP_ICON 101
-#define ACTIVE_ICON 102
 
 NOTIFYICONDATAA nid = {};
 
