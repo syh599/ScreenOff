@@ -105,9 +105,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             HMENU hMenu = CreatePopupMenu();
             HMENU hSleepMenu = CreatePopupMenu();
 
+            //sleep submenu
             bool isCustomTime = ((sleepAfterMinutes > 60) || (sleepAfterMinutes <= 60 && sleepAfterMinutes % 15 != 0));
             std::string customText = "Custom: " +
                 (isCustomTime ? std::to_string(sleepAfterMinutes) + " mins" : "");
+
 
             AppendMenuA(hSleepMenu, MF_STRING | (sleepAfterMinutes == 15 ? MF_CHECKED : MF_UNCHECKED), 10, "15 minutes");
             AppendMenuA(hSleepMenu, MF_STRING | (sleepAfterMinutes == 30 ? MF_CHECKED : MF_UNCHECKED), 11, "30 minutes");
@@ -116,9 +118,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             AppendMenuA(hSleepMenu, MF_STRING | ( isCustomTime ? MF_CHECKED : MF_UNCHECKED), 14, customText.c_str());
             AppendMenuA(hSleepMenu, MF_SEPARATOR, 0, NULL);
             AppendMenuA(hSleepMenu, MF_STRING, 15, "Cancel");
-            
+
+            //right click menu
+            std::string sleepTimerText = "Sleep Timer: " +
+                ( (sleepAfterMinutes > 0) ? std::to_string(sleepAfterMinutes) + " mins" : "OFF");
+
+
             AppendMenuA(hMenu, MF_STRING, 98, "Test PAUSE command");
-            AppendMenuA(hMenu, MF_POPUP | (sleepAfterMinutes > 0 ? MF_CHECKED : MF_UNCHECKED), (UINT_PTR)hSleepMenu, "Sleep Timer");
+            AppendMenuA(hMenu, MF_POPUP | (sleepAfterMinutes > 0 ? MF_CHECKED : MF_UNCHECKED), (UINT_PTR)hSleepMenu, sleepTimerText.c_str());
             AppendMenuA(hMenu, MF_STRING | (IsInStartup() ? MF_CHECKED : MF_UNCHECKED), 2, "Run on startup");
             AppendMenuA(hMenu, MF_SEPARATOR, 0, NULL);
             AppendMenuA(hMenu, MF_STRING, 99, "Exit");
