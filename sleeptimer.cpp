@@ -1,43 +1,77 @@
 #include "sleeptimer.h"
+#include "resource.h"
 
 #include <cstdio>
 #include <windows.h>
 #include <ctime>
 
-int GetCustomTime()
+INT_PTR CALLBACK TimeDialogProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    // Allocate a console
-    AllocConsole();
+    switch (msg)
+    {
+    case WM_INITDIALOG:
+    {
+        int sleepAfterMinutes = (int)lParam;
 
-    FILE* dummy;
-    freopen_s(&dummy, "CONOUT$", "w", stdout);
-    freopen_s(&dummy, "CONIN$", "r", stdin);
+        SetDlgItemInt(hDlg, IDC_CUSTOM_TIME, sleepAfterMinutes, FALSE);
+        SetFocus(GetDlgItem(hDlg, IDC_CUSTOM_TIME));
+        SendDlgItemMessage(hDlg, IDC_CUSTOM_TIME, EM_SETSEL, 0, -1);
 
-    int minutes = 0;
-    int result;
+        POINT pt;
+        GetCursorPos(&pt);
 
-    do {
-        printf("Enter minutes until sleep (1-1440): ");
-        result = scanf_s("%d", &minutes);
+        RECT rcDlg;
+        GetWindowRect(hDlg, &rcDlg);
+        int dlgWidth = rcDlg.right - rcDlg.left;
+        int dlgHeight = rcDlg.bottom - rcDlg.top;
 
-        // Clear input buffer
-        while (getchar() != '\n');
+        int x = pt.x - dlgWidth / 2;
+        int y = pt.y - dlgHeight - 5;
 
-        if (result != 1 || minutes <= 0 || minutes > 1440)
+        /*
+        //Debug
+        char debug[256];
+        sprintf_s(debug, "Cursor: %d, %d\nDialog size: %d x %d\nCalculated: %d, %d",
+            pt.x, pt.y, dlgWidth, dlgHeight, x, y);
+        MessageBoxA(NULL, debug, "Debug", MB_OK); 
+        */
+
+        SetWindowPos(hDlg, NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+
+        return FALSE;
+    }
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDOK)
         {
-            printf("Invalid input! Please enter an integer in [1, 1440].\n\n");
-            minutes = 0;
+            BOOL success;
+            int minutes = GetDlgItemInt(hDlg, IDC_CUSTOM_TIME, &success, FALSE);
+            if (success && minutes >= 1 && minutes <= 1440)
+            {
+                EndDialog(hDlg, minutes);
+            }
+            else
+            {
+                MessageBoxA(hDlg, "Please enter 1-1440", "Invalid", MB_OK);
+            }
+            return TRUE;
         }
-        else break;
+        else if (LOWORD(wParam) == IDCANCEL)
+        {
+            EndDialog(hDlg, -1);
+            return TRUE;
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
 
-    } while (true);
+int GetCustomTime(HWND hwnd, time_t sleepAfterMinutes)
+{
+    INT_PTR result = DialogBoxParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_SET_TIMER),
+        hwnd, TimeDialogProc, (LPARAM)sleepAfterMinutes);
 
-    // Clean up
-    fclose(stdout);
-    fclose(stdin);
-    FreeConsole();
-
-    return minutes;
+    // Result should be between 0-1440, safe to cast
+    return (int)result;
 }
 
 void StartSleepTimer(time_t sleepAfterMinutes, bool& sleepTimerActive, time_t& sleepTargetTime, HWND hwnd)

@@ -155,7 +155,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         else if (command == 11) sleepAfterMinutes = 30;
         else if (command == 12) sleepAfterMinutes = 45;
         else if (command == 13) sleepAfterMinutes = 60;
-        else if (command == 14) sleepAfterMinutes = GetCustomTime();
+        else if (command == 14) {
+            int newTime = GetCustomTime(hwnd, sleepAfterMinutes);
+            if (newTime>0) sleepAfterMinutes = newTime; //if not cancelled
+        }
         else if (command == 15) sleepAfterMinutes = 0;
         else if (command == 98) PressMediaPlayPause(); //SendMessage(HWND_BROADCAST, WM_SYSCOMMAND, SC_MONITORPOWER, 2); //SetSuspendState(FALSE, FALSE, FALSE);
             
