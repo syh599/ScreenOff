@@ -3,4 +3,4 @@
 #include <windows.h>
 
 int GetCustomTime();
-void StartSleepTimer(int sleepAfterMinutes, bool& sleepTimerActive, time_t& sleepTargetTime, HWND hwnd);
+void StartSleepTimer(time_t sleepAfterMinutes, bool& sleepTimerActive, time_t& sleepTargetTime, HWND hwnd);

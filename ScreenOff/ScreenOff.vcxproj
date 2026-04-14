@@ -130,6 +130,7 @@
     <ClCompile Include="..\autostart.cpp" />
     <ClCompile Include="..\isAdmin.cpp" />
     <ClCompile Include="..\main.cpp" />
+    <ClCompile Include="..\mediactrl.cpp" />
     <ClCompile Include="..\silentcmd.cpp" />
     <ClCompile Include="..\sleeptimer.cpp" />
     <ClCompile Include="..\timeout.cpp" />
@@ -145,6 +146,7 @@
   <ItemGroup>
     <ClInclude Include="..\autostart.h" />
     <ClInclude Include="..\isAdmin.h" />
+    <ClInclude Include="..\mediactrl.h" />
     <ClInclude Include="..\resource.h" />
     <ClInclude Include="..\silentcmd.h" />
     <ClInclude Include="..\sleeptimer.h" />

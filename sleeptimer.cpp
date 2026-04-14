@@ -40,7 +40,7 @@ int GetCustomTime()
     return minutes;
 }
 
-void StartSleepTimer(int sleepAfterMinutes, bool& sleepTimerActive, time_t& sleepTargetTime, HWND hwnd)
+void StartSleepTimer(time_t sleepAfterMinutes, bool& sleepTimerActive, time_t& sleepTargetTime, HWND hwnd)
 {
     if (sleepAfterMinutes <= 0) return;
 

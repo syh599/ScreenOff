@@ -18,6 +18,7 @@
 #include "autostart.h"
 #include "silentcmd.h"
 #include "sleeptimer.h"
+#include "mediactrl.h"
 
 #pragma comment(lib, "powrprof.lib")
 
@@ -32,27 +33,12 @@ bool isActive = 0;
 HPOWERNOTIFY hPowerNotify = NULL;
 
 bool sleepTimerActive = false;
-int sleepAfterMinutes = 0;
+time_t sleepAfterMinutes = 0;
 time_t sleepTargetTime = 0;
 
 UINT uTaskbarRestart = 0;
 
 std::vector<std::string> activeOverrides;
-
-void PressMediaPlayPause() {
-    INPUT inputs[2] = { 0 };
-
-    // Key down event
-    inputs[0].type = INPUT_KEYBOARD;
-    inputs[0].ki.wVk = VK_MEDIA_PLAY_PAUSE;
-
-    // Key up event
-    inputs[1].type = INPUT_KEYBOARD;
-    inputs[1].ki.wVk = VK_MEDIA_PLAY_PAUSE;
-    inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
-
-    SendInput(2, inputs, sizeof(INPUT));
-}
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -164,7 +150,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         else if (command == 13) sleepAfterMinutes = 60;
         else if (command == 14) sleepAfterMinutes = GetCustomTime();
         else if (command == 15) sleepAfterMinutes = 0;
-        else if (command == 98) PressMediaPlayPause(); //SetSuspendState(FALSE, FALSE, FALSE);
+        else if (command == 98) PressMediaPlayPause(); //SendMessage(HWND_BROADCAST, WM_SYSCOMMAND, SC_MONITORPOWER, 2); //SetSuspendState(FALSE, FALSE, FALSE);
             
         return 0;
     }
@@ -210,6 +196,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             sleepTimerActive = false;
             sleepAfterMinutes = 0; //option to skip???? TODO!!!!!!
             KillTimer(hwnd, 1);
+            //SendMessage(HWND_BROADCAST, WM_SYSCOMMAND, SC_MONITORPOWER, 2);
             PressMediaPlayPause();
             //SetSuspendState(FALSE, TRUE, FALSE);
         }
