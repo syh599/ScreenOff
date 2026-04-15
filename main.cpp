@@ -40,6 +40,8 @@ UINT uTaskbarRestart = 0;
 
 std::vector<std::string> activeOverrides;
 
+bool restoreOnWake = true;
+
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     // When window is first created, add the tray icon
@@ -123,9 +125,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             std::string sleepTimerText = "Sleep Timer: " +
                 ( (sleepAfterMinutes > 0) ? std::to_string(sleepAfterMinutes) + " mins" : "OFF");
 
-
             AppendMenuA(hMenu, MF_STRING, 98, "Test PAUSE command");
             AppendMenuA(hMenu, MF_POPUP | (sleepAfterMinutes > 0 ? MF_CHECKED : MF_UNCHECKED), (UINT_PTR)hSleepMenu, sleepTimerText.c_str());
+            AppendMenuA(hMenu, MF_SEPARATOR, 0, NULL);
+            AppendMenuA(hMenu, MF_STRING | (restoreOnWake ? MF_CHECKED : MF_UNCHECKED), 3, "Restore on wake");
             AppendMenuA(hMenu, MF_STRING | (IsInStartup() ? MF_CHECKED : MF_UNCHECKED), 2, "Run on startup");
             AppendMenuA(hMenu, MF_SEPARATOR, 0, NULL);
             AppendMenuA(hMenu, MF_STRING, 99, "Exit");
@@ -151,6 +154,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             if (IsInStartup()) RemoveFromStartup();
             else AddToStartup();
         }
+        else if (command == 3) restoreOnWake ^= 1;
         else if (command == 10) sleepAfterMinutes = 15;
         else if (command == 11) sleepAfterMinutes = 30;
         else if (command == 12) sleepAfterMinutes = 45;
@@ -179,16 +183,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             DWORD monitorState = *(DWORD*)pbs->Data;
             if (monitorState == 1 && isActive)  // Monitor turned ON
             {
-                RestoreOriginalTimeout(pActiveScheme, originalTimeoutAC, originalTimeoutDC, hasSavedTimeout);
-                isActive = 0;
-                RevertOverrides(activeOverrides);
+                if (restoreOnWake) {
+                    RestoreOriginalTimeout(pActiveScheme, originalTimeoutAC, originalTimeoutDC, hasSavedTimeout);
+                    isActive = 0;
+                    RevertOverrides(activeOverrides);
+                    nid.hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(APP_ICON));
+                    Shell_NotifyIconA(NIM_MODIFY, &nid);
+                }
 
                 sleepTimerActive = false;
                 sleepAfterMinutes = 0;
                 KillTimer(hwnd, 1);
-
-                nid.hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(APP_ICON));
-                Shell_NotifyIconA(NIM_MODIFY, &nid);
             }
         }
         return 0;
