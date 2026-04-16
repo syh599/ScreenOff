@@ -19,6 +19,8 @@
 #include "silentcmd.h"
 #include "sleeptimer.h"
 #include "mediactrl.h"
+#include "config.h"
+#include "customDialog.h"
 
 #pragma comment(lib, "powrprof.lib")
 
@@ -40,7 +42,9 @@ UINT uTaskbarRestart = 0;
 
 std::vector<std::string> activeOverrides;
 
-bool restoreOnWake = true;
+Config g_config;
+DWORD newTimeout = g_config.GetNewDisplayTimeout();
+bool restoreOnWake = g_config.GetRestoreOnWake();
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -77,7 +81,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             if (!isActive) {
                 if (SaveOriginalTimeout(&pActiveScheme, &originalTimeoutAC, &originalTimeoutDC, &hasSavedTimeout) 
                     && 
-                    SetNewTimeout(pActiveScheme)) 
+                    SetNewTimeout(pActiveScheme, newTimeout)) 
                 {
                     isActive = 1;
                     OverrideWakeLocks(activeOverrides);
@@ -119,19 +123,27 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             AppendMenuA(hSleepMenu, MF_STRING | (sleepAfterMinutes == 60 ? MF_CHECKED : MF_UNCHECKED), 13, "60 minutes");
             AppendMenuA(hSleepMenu, MF_STRING | ( isCustomTime ? MF_CHECKED : MF_UNCHECKED), 14, customText.c_str());
             AppendMenuA(hSleepMenu, MF_SEPARATOR, 0, NULL);
-            AppendMenuA(hSleepMenu, MF_STRING, 15, "Cancel");
+            AppendMenuA(hSleepMenu, MF_STRING, 15, "OFF");
 
             //right click menu
             std::string sleepTimerText = "Sleep Timer: " +
                 ( (sleepAfterMinutes > 0) ? std::to_string(sleepAfterMinutes) + " mins" : "OFF");
 
+            //AppendMenuA(hMenu, MF_MENUBARBREAK, 0, NULL);
             AppendMenuA(hMenu, MF_STRING, 98, "Test PAUSE command");
             AppendMenuA(hMenu, MF_POPUP | (sleepAfterMinutes > 0 ? MF_CHECKED : MF_UNCHECKED), (UINT_PTR)hSleepMenu, sleepTimerText.c_str());
             AppendMenuA(hMenu, MF_SEPARATOR, 0, NULL);
+
+            AppendMenuA(hMenu, MF_STRING, 100, "Test debug");
+            AppendMenuA(hMenu, MF_STRING, 97, ("Set Display Timeout: " + std::to_string(newTimeout) + 's').c_str());
+            AppendMenuA(hMenu, MF_SEPARATOR, 0, NULL);
+
             AppendMenuA(hMenu, MF_STRING | (restoreOnWake ? MF_CHECKED : MF_UNCHECKED), 3, "Restore on wake");
             AppendMenuA(hMenu, MF_STRING | (IsInStartup() ? MF_CHECKED : MF_UNCHECKED), 2, "Run on startup");
+
             AppendMenuA(hMenu, MF_SEPARATOR, 0, NULL);
             AppendMenuA(hMenu, MF_STRING, 99, "Exit");
+            
             
             // Show the menu at mouse position
             POINT pt;
@@ -154,18 +166,28 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             if (IsInStartup()) RemoveFromStartup();
             else AddToStartup();
         }
-        else if (command == 3) restoreOnWake ^= 1;
+        else if (command == 3) {
+            restoreOnWake ^= 1;
+            g_config.SetRestoreOnWake(restoreOnWake);
+        }
         else if (command == 10) sleepAfterMinutes = 15;
         else if (command == 11) sleepAfterMinutes = 30;
         else if (command == 12) sleepAfterMinutes = 45;
         else if (command == 13) sleepAfterMinutes = 60;
         else if (command == 14) {
-            int newTime = GetCustomTime(hwnd, sleepAfterMinutes);
-            if (newTime>0) sleepAfterMinutes = newTime; //if not cancelled
+            int customSleepAfter = GetCustomTime(hwnd, sleepAfterMinutes);
+            if (customSleepAfter > 0) sleepAfterMinutes = customSleepAfter; //if not cancelled
         }
         else if (command == 15) sleepAfterMinutes = 0;
         else if (command == 98) PressMediaPlayPause(); //SendMessage(HWND_BROADCAST, WM_SYSCOMMAND, SC_MONITORPOWER, 2); //SetSuspendState(FALSE, FALSE, FALSE);
-            
+        else if (command == 97) {
+            int customTimeout = GetNewTimeout(hwnd, newTimeout);
+            if (customTimeout > 0) {
+                newTimeout = customTimeout; //if not cancelled
+                g_config.SetNewDisplayTimeout(customTimeout);
+            }
+        }
+        else if (command == 100) SendMessage(HWND_BROADCAST, WM_SYSCOMMAND, SC_MONITORPOWER, 2);
         return 0;
     }
 
@@ -211,7 +233,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             sleepTimerActive = false;
             sleepAfterMinutes = 0; //option to skip???? TODO!!!!!!
             KillTimer(hwnd, 1);
-            //SendMessage(HWND_BROADCAST, WM_SYSCOMMAND, SC_MONITORPOWER, 2);
+            //SendMessage(FindWindow(L"Progman", NULL), WM_SYSCOMMAND, SC_MONITORPOWER, 1);
             PressMediaPlayPause();
             //SetSuspendState(FALSE, TRUE, FALSE);
         }

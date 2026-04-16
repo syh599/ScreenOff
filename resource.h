@@ -3,11 +3,14 @@
 // Used by resource.rc
 //
 #define IDD_SET_TIMER                   9
+#define IDD_SET_TIMEOUT                 10
 #define APP_ICON                        101
 #define ACTIVE_ICON                     102
 #define IDC_CUSTOM_TIME                 1001
 #define IDC_MINUTES                     1002
 #define IDC_SLEEP_AFTER                 1003
+#define IDC_SECONDS                     1004
+#define IDC_IDLE_TIMEOUT                1005
 
 // Next default values for new objects
 // 
@@ -15,7 +18,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        105
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1004
+#define _APS_NEXT_CONTROL_VALUE         1006
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

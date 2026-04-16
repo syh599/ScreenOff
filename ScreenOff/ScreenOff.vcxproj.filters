@@ -39,6 +39,9 @@
     <ClCompile Include="..\mediactrl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\customDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\resource.rc">
@@ -78,7 +81,13 @@
     <ClInclude Include="..\mediactrl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\json.hpp">
+    <ClInclude Include="..\config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\nlohmann\json.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\customDialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

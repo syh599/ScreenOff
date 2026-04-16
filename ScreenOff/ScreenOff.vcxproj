@@ -102,7 +102,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
@@ -128,6 +128,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\autostart.cpp" />
+    <ClCompile Include="..\customDialog.cpp" />
     <ClCompile Include="..\isAdmin.cpp" />
     <ClCompile Include="..\main.cpp" />
     <ClCompile Include="..\mediactrl.cpp" />
@@ -145,9 +146,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\autostart.h" />
+    <ClInclude Include="..\config.h" />
+    <ClInclude Include="..\customDialog.h" />
     <ClInclude Include="..\isAdmin.h" />
-    <ClInclude Include="..\json.hpp" />
     <ClInclude Include="..\mediactrl.h" />
+    <ClInclude Include="..\nlohmann\json.hpp" />
     <ClInclude Include="..\resource.h" />
     <ClInclude Include="..\silentcmd.h" />
     <ClInclude Include="..\sleeptimer.h" />

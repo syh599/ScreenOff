@@ -1,4 +1,7 @@
 #include "timeout.h"
+#include "resource.h"
+#include "customDialog.h"
+
 #include <windows.h>
 #include <powrprof.h>
 
@@ -18,9 +21,8 @@ bool SaveOriginalTimeout(GUID** ppActiveScheme, DWORD* originalTimeoutAC, DWORD*
     return 1;
 }
 
-bool SetNewTimeout(GUID* pActiveScheme)
+bool SetNewTimeout(GUID* pActiveScheme, DWORD newTimeout)
 {
-    DWORD newTimeout = 1; // in seconds
 
     if ((PowerWriteACValueIndex(NULL, pActiveScheme, &GUID_DISPLAY_SUBGROUP, &GUID_DISPLAY_TIMEOUT, newTimeout) != ERROR_SUCCESS) ||
         (PowerWriteDCValueIndex(NULL, pActiveScheme, &GUID_DISPLAY_SUBGROUP, &GUID_DISPLAY_TIMEOUT, newTimeout) != ERROR_SUCCESS))
@@ -43,4 +45,12 @@ bool RestoreOriginalTimeout(GUID* pActiveScheme, DWORD originalTimeoutAC, DWORD 
     PowerSetActiveScheme(NULL, pActiveScheme);
 
     return 1;
+}
+
+int GetNewTimeout(HWND hwnd, DWORD newTimeout)
+{
+    INT_PTR result = DialogBoxParam(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_SET_TIMEOUT),
+        hwnd, TimeDialogProc, (LPARAM)newTimeout);
+
+    return (DWORD)result;
 }
