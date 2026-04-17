@@ -2,6 +2,7 @@
 #include <string>
 #include <filesystem>
 #include <fstream>
+#include <windows.h>
 #include "nlohmann/json.hpp"
 
 class Config {
@@ -29,16 +30,29 @@ public:
         std::filesystem::create_directories(GetConfigDir());
 
         // Load existing config or create default
+        bool loaded = false;
         std::ifstream file(configPath);
+
         if (file.is_open()) {
-            file >> data;
-            file.close();
+            try {
+                file >> data;
+                loaded = true;
+                file.close();
+            }
+            catch (const nlohmann::json::parse_error& e) {
+                file.close();
+                std::filesystem::rename(configPath, configPath + ".corrupt"); //corrupt backup
+            }
         }
-        else {
+        if (!loaded) {
             // Default values
+            data = nlohmann::json();
             data["restoreOnWake"] = true;
             data["newDisplayTimeout"] = 1;
             data["sleepAction"] = 0;
+            data["mode"] = 0;
+            data["resetTimer"] = true;
+            data["sleepTimerMinutes"] = 0;
             Save();
         }
     }
@@ -60,4 +74,14 @@ public:
 
     int GetSleepAction() { return data.value("sleepAction", 0); }
     void SetSleepAction(int action) { data["sleepAction"] = action; Save(); }
+    /*
+    int GetMode() { return data.value("mode", 0); }
+    void SetMode(int mode) { data["mode"] = mode; Save(); }
+
+    bool GetResetTimer() { return data.value("resetTimer", true); }
+    void SetResetTimer(bool tf) { data["resetTimer"] = tf; Save(); }
+
+    int GetSleepTimerMinutes() { return data.value("sleepTimerMinutes", 0); }
+    void SetRestoreTimer(int minutes) { data["SleepTimerMinutes"] = minutes; Save(); }
+    */
 };
