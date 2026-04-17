@@ -44,3 +44,6 @@ A lightweight Windows tray application that turns off the display while keeping 
 - The application must be run as Administrator (to override display wake lock)
 - Only one instance can run at a time
 - All settings are automatically restored when waking the screen or exiting the app
+
+## Credits
+- json by nlohmann: https://github.com/nlohmann/json
