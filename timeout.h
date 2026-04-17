@@ -1,13 +1,16 @@
 #pragma once
 #include <windows.h>
 
-static const GUID GUID_DISPLAY_SUBGROUP =
-{ 0x7516b95f, 0xf776, 0x4464, 0x8c, 0x53, 0x06, 0x16, 0x7f, 0x40, 0xcc, 0x99 };
+//bool SaveOriginalTimeout(GUID** pActiveScheme, GUID GUID_SUBGROUP, GUID GUID_TIMEOUT, DWORD* originalTimeoutAC, DWORD* originalTimeoutDC, bool* hasSavedTimeout);
+//bool SetNewTimeout(GUID* pActiveScheme, GUID GUID_SUBGROUP, GUID GUID_TIMEOUT, DWORD newTimeout);
+//bool RestoreOriginalTimeout(GUID* pActiveScheme, GUID GUID_SUBGROUP, GUID GUID_TIMEOUT, DWORD originalTimeoutAC, DWORD originalTimeoutDC, bool hasSavedTimeout);
 
-static const GUID GUID_DISPLAY_TIMEOUT =
-{ 0x3c0bc021, 0xc8a8, 0x4e07, 0xa9, 0x73, 0x6b, 0x14, 0xcb, 0xcb, 0x2b, 0x7e };
-
-bool SaveOriginalTimeout(GUID** pActiveScheme, DWORD* originalTimeoutAC, DWORD* originalTimeoutDC, bool* hasSavedTimeout);
-bool SetNewTimeout(GUID* pActiveScheme, DWORD newTimeout);
-bool RestoreOriginalTimeout(GUID* pActiveScheme, DWORD originalTimeoutAC, DWORD originalTimeoutDC, bool hasSavedTimeout);
 int GetNewTimeout(HWND hwnd, DWORD newTimeout);
+
+bool SaveOldDisplayTimeout(GUID*& pActiveScheme, DWORD& originalTimeoutAC, DWORD& originalTimeoutDC, bool& pHasSavedTimeout);
+bool SetNewDisplayTimeout(GUID* pActiveScheme, DWORD newTimeout);
+bool RestoreDisplayTimeout(GUID* pActiveScheme, DWORD originalTimeoutAC, DWORD originalTimeoutDC, bool& pHasSavedTimeout);
+
+bool SaveOldSleepTimeout(GUID*& pActiveScheme, DWORD& originalTimeoutAC, DWORD& originalTimeoutDC, bool& pHasSavedTimeout);
+bool SetNewSleepTimeout(GUID* pActiveScheme, DWORD newTimeout);
+bool RestoreSleepTimeout(GUID * pActiveScheme, DWORD originalTimeoutAC, DWORD originalTimeoutDC, bool& pHasSavedTimeout);

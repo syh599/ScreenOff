@@ -38,6 +38,7 @@ public:
             // Default values
             data["restoreOnWake"] = true;
             data["newDisplayTimeout"] = 1;
+            data["sleepAction"] = 0;
             Save();
         }
     }
@@ -51,9 +52,12 @@ public:
     }
 
     // Getters/Setters
-    bool GetRestoreOnWake() { return data.value("restoreOnWake", 0); }
+    bool GetRestoreOnWake() { return data.value("restoreOnWake", true); }
     void SetRestoreOnWake(bool tf) { data["restoreOnWake"] = tf; Save(); }
 
-    int GetNewDisplayTimeout() { return data.value("newDisplayTimeout", 30); }
+    int GetNewDisplayTimeout() { return data.value("newDisplayTimeout", 1); }
     void SetNewDisplayTimeout(int minutes) { data["newDisplayTimeout"] = minutes; Save(); }
+
+    int GetSleepAction() { return data.value("sleepAction", 0); }
+    void SetSleepAction(int action) { data["sleepAction"] = action; Save(); }
 };

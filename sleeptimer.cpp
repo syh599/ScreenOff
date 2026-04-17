@@ -20,9 +20,9 @@ void StartSleepTimer(time_t sleepAfterMinutes, bool& sleepTimerActive, time_t& s
 {
     if (sleepAfterMinutes <= 0) return;
 
-    sleepTargetTime = time(NULL) + (sleepAfterMinutes);// *60);
+    sleepTargetTime = time(NULL) + (sleepAfterMinutes *60);
     sleepTimerActive = true;
 
     // set timer interval (ms)
-    SetTimer(hwnd, 1, 500, NULL);
+    SetTimer(hwnd, 1, 10000, NULL);
 }
